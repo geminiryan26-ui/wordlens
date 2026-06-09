@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WordLens — 스마트 단어장</title>
+<style>
+/* ── Pretendard 대용 시스템 폰트 ── */
+:root {
+  --bg:     #0d0d14;
+  --card:   #16161f;
+  --card2:  #1e1e2a;
+  --border: #2c2c3e;
+  --acc:    #6c63ff;
+  --acc2:   #a78bfa;
+  --teal:   #2dd4bf;
+  --txt:    #eeeef5;
+  --txt2:   #7878a0;
+  --red:    #f87171;
+  --grn:    #4ade80;
+  --gold:   #fbbf24;
+  --r:      14px;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html{scroll-behavior:smooth;}
+body{
+  background:var(--bg);color:var(--txt);
+  font-family:-apple-system,'Malgun Gothic','Apple SD Gothic Neo',sans-serif;
+  min-height:100vh;font-size:15px;line-height:1.6;
+}
+
+/* ── Header ── */
+#hd{
+  position:sticky;top:0;z-index:200;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 20px;
+  background:rgba(13,13,20,0.92);
+  backdrop-filter:blur(14px);
+  border-bottom:1px solid var(--border);
+}
+.logo{
+  display:flex;align-items:center;gap:9px;
+  font-size:1.25rem;font-weight:800;letter-spacing:-.03em;
+}
+.logo-icon{
+  width:32px;height:32px;border-radius:9px;
+  background:linear-gradient(135deg,var(--acc),var(--teal));
+  display:flex;align-items:center;justify-content:center;
+  font-size:1rem;flex-shrink:0;
+}
+.badge{
+  font-size:.72rem;font-weight:700;color:var(--acc2);
+  background:rgba(108,99,255,.12);border:1px solid rgba(108,99,255,.25);
+  padding:3px 11px;border-radius:20px;letter-spacing:.01em;
+}
+
+/* ── Nav ── */
+#nav{
+  display:flex;overflow-x:auto;
+  background:var(--card);border-bottom:1px solid var(--border);
+  scrollbar-width:none;
+}
+#nav::-webkit-scrollbar{display:none;}
+.nb{
+  padding:13px 18px;font-size:.8rem;font-weight:700;
+  cursor:pointer;color:var(--txt2);border:none;background:none;
+  border-bottom:2px solid transparent;white-space:nowrap;
+  font-family:inherit;transition:all .2s;flex-shrink:0;
+}
+.nb:hover{color:var(--txt);}
+.nb.on{color:var(--acc2);border-bottom-color:var(--acc);}
+
+/* ── Views ── */
+.view{display:none;padding:20px;max-width:700px;margin:0 auto;}
+.view.on{display:block;}
+
+/* ── Buttons ── */
+.btn{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:10px 18px;border-radius:10px;font-size:.82rem;font-weight:700;
+  cursor:pointer;border:none;font-family:inherit;transition:all .18s;
+  letter-spacing:.01em;
+}
+.bp{background:var(--acc);color:#fff;}
+.bp:hover{background:#5a52e0;transform:translateY(-1px);}
+.bp:active{transform:translateY(0);}
+.bs{background:var(--card2);color:var(--txt2);border:1px solid var(--border);}
+.bs:hover{background:var(--border);color:var(--txt);}
+.bg{background:rgba(74,222,128,.1);color:var(--grn);border:1px solid rgba(74,222,128,.25);}
+.br{background:rgba(248,113,113,.1);color:var(--red);border:1px solid rgba(248,113,113,.25);}
+.btn:disabled{opacity:.4;cursor:not-allowed;transform:none;}
+
+/* ── Card ── */
+.card{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:var(--r);padding:18px;margin-bottom:14px;
+}
+.card-title{font-size:.88rem;font-weight:700;margin-bottom:12px;}
+.lbl{font-size:.68rem;color:var(--txt2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px;font-weight:700;}
+
+/* ── Inputs ── */
+input,textarea{
+  width:100%;padding:10px 13px;border-radius:10px;
+  background:var(--card2);border:1.5px solid var(--border);
+  color:var(--txt);font-size:.85rem;outline:none;font-family:inherit;
+  transition:border-color .2s;
+}
+input:focus,textarea:focus{border-color:var(--acc);}
+textarea{resize:vertical;line-height:1.6;min-height:120px;}
+::placeholder{color:var(--txt2);opacity:.7;}
+
+/* ── Pills ── */
+.pill{
+  padding:7px 14px;border-radius:20px;font-size:.79rem;font-weight:700;
+  cursor:pointer;background:var(--card2);border:1.5px solid var(--border);
+  color:var(--txt2);font-family:inherit;transition:all .18s;
+}
+.pill:hover{border-color:var(--acc2);color:var(--txt);}
+.pill.on{background:rgba(108,99,255,.15);border-color:var(--acc);color:var(--acc2);}
+
+/* ── Notice ── */
+.notice{
+  background:rgba(108,99,255,.07);
+  border:1px solid rgba(108,99,255,.2);
+  border-radius:var(--r);padding:16px;margin-bottom:16px;
+}
+.notice-title{font-size:.88rem;font-weight:700;color:var(--acc2);margin-bottom:10px;display:flex;align-items:center;gap:6px;}
+.step{display:flex;align-items:flex-start;gap:10px;margin-bottom:8px;font-size:.82rem;color:var(--txt2);}
+.snum{
+  width:22px;height:22px;border-radius:50%;flex-shrink:0;margin-top:1px;
+  background:linear-gradient(135deg,var(--acc),var(--acc2));
+  display:flex;align-items:center;justify-content:center;
+  font-size:.68rem;font-weight:800;color:#fff;
+}
+.hint-box{
+  background:rgba(45,212,191,.08);border:1px solid rgba(45,212,191,.2);
+  border-radius:9px;padding:9px 12px;margin-top:10px;
+  font-size:.79rem;color:var(--teal);line-height:1.6;
+}
+
+/* ── Word Card ── */
+.wc{
+  background:var(--card);border:1.5px solid var(--border);
+  border-radius:var(--r);padding:14px 16px;
+  display:flex;align-items:flex-start;gap:12px;margin-bottom:10px;
+  transition:border-color .2s;
+}
+.wc:hover{border-color:rgba(108,99,255,.4);}
+.wc.wrong{border-color:rgba(248,113,113,.3);}
+.wm{flex:1;min-width:0;}
+.we{font-weight:800;font-size:1.02rem;letter-spacing:-.01em;}
+.wph{font-family:'Courier New',monospace;font-size:.72rem;color:var(--teal);margin-top:2px;}
+.wpos{font-size:.68rem;background:rgba(108,99,255,.15);color:var(--acc2);border-radius:4px;padding:1px 6px;font-weight:700;}
+.wk{font-size:.84rem;color:var(--txt2);margin-top:4px;}
+.wex{font-size:.74rem;color:var(--txt2);margin-top:3px;font-style:italic;opacity:.65;}
+.wwrong-tag{font-size:.64rem;color:var(--red);font-weight:700;}
+.wa{display:flex;flex-direction:column;gap:6px;flex-shrink:0;align-items:flex-end;}
+.pr{display:flex;gap:3px;flex-wrap:wrap;justify-content:flex-end;}
+.pb{
+  padding:4px 8px;border-radius:6px;font-size:.68rem;cursor:pointer;
+  background:var(--card2);border:1px solid var(--border);color:var(--txt2);
+  transition:all .15s;font-family:inherit;font-weight:600;
+}
+.pb:hover{background:var(--acc);color:#fff;border-color:var(--acc);}
+.del-btn{
+  background:none;border:none;cursor:pointer;color:var(--txt2);
+  font-size:.9rem;padding:3px;transition:color .15s;
+}
+.del-btn:hover{color:var(--red);}
+
+/* ── Search ── */
+.search-wrap{position:relative;margin-bottom:14px;}
+.search-wrap input{padding-left:36px;}
+.search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--txt2);font-size:.9rem;pointer-events:none;}
+
+/* ── Empty ── */
+.empty{text-align:center;padding:60px 20px;color:var(--txt2);}
+.empty-icon{font-size:3rem;margin-bottom:12px;opacity:.6;}
+.empty-title{font-size:.95rem;font-weight:700;color:var(--txt);margin-bottom:5px;}
+.empty-sub{font-size:.8rem;line-height:1.6;}
+
+/* ── Progress bar ── */
+.progwrap{height:5px;background:var(--card2);border-radius:3px;overflow:hidden;flex:1;}
+.progbar{height:100%;background:linear-gradient(90deg,var(--acc),var(--teal));border-radius:3px;transition:width .5s cubic-bezier(.4,0,.2,1);}
+
+/* ── Quiz ── */
+.qcard{
+  background:var(--card);border:1.5px solid var(--border);
+  border-radius:18px;padding:30px 24px;text-align:center;
+  min-height:170px;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;margin-bottom:18px;
+}
+.qlbl{font-size:.69rem;text-transform:uppercase;letter-spacing:.12em;color:var(--txt2);margin-bottom:10px;font-weight:700;}
+.qwd{font-weight:800;font-size:2rem;line-height:1.2;letter-spacing:-.02em;}
+.qph{font-family:'Courier New',monospace;font-size:.76rem;color:var(--teal);margin-top:6px;}
+.qpron{display:flex;gap:6px;margin-top:12px;flex-wrap:wrap;justify-content:center;}
+.fb{border-radius:14px;padding:18px;text-align:center;margin-bottom:16px;animation:popIn .25s cubic-bezier(.34,1.56,.64,1);}
+.fb.ok{background:rgba(74,222,128,.08);border:1.5px solid rgba(74,222,128,.3);}
+.fb.no{background:rgba(248,113,113,.08);border:1.5px solid rgba(248,113,113,.3);}
+.fb-icon{font-size:2.2rem;margin-bottom:4px;}
+.fb-title{font-weight:800;font-size:1rem;}
+.fb-answer{font-size:.81rem;color:var(--txt2);margin-top:5px;}
+
+/* ── Result ── */
+.res-grade{
+  font-weight:900;font-size:3.5rem;
+  background:linear-gradient(135deg,var(--acc),var(--teal));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.res-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px;}
+.res-box{background:var(--card2);border-radius:11px;padding:14px;text-align:center;}
+.res-num{font-size:1.4rem;font-weight:800;font-family:'Courier New',monospace;}
+
+/* ── Canvas ── */
+.cvwrap{border:1.5px solid var(--border);border-radius:12px;overflow:hidden;background:#141420;cursor:crosshair;}
+canvas{display:block;width:100%;touch-action:none;}
+.cv-toolbar{display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap;}
+
+/* ── Animations ── */
+@keyframes popIn{from{transform:scale(.88);opacity:0}to{transform:scale(1);opacity:1}}
+@keyframes slideUp{from{transform:translateY(8px);opacity:0}to{transform:translateY(0);opacity:1}}
+.slide-up{animation:slideUp .25s ease both;}
+
+/* ── Toast ── */
+#toast{
+  position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+  padding:11px 20px;border-radius:12px;font-size:.82rem;font-weight:700;
+  z-index:9999;white-space:nowrap;opacity:0;pointer-events:none;
+  transition:opacity .25s,transform .25s;transform:translateX(-50%) translateY(6px);
+  backdrop-filter:blur(10px);
+}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+#toast.ok{background:rgba(74,222,128,.15);border:1px solid rgba(74,222,128,.4);color:var(--grn);}
+#toast.err{background:rgba(248,113,113,.15);border:1px solid rgba(248,113,113,.4);color:var(--red);}
+
+/* ── Tag ── */
+.tag{display:inline-flex;align-items:center;gap:4px;background:var(--card2);border:1px solid var(--border);border-radius:6px;padding:3px 8px;font-size:.76rem;}
+.tag .tw{font-family:'Courier New',monospace;color:var(--teal);font-weight:700;}
+.tag .tp{font-size:.65rem;background:rgba(108,99,255,.15);color:var(--acc2);border-radius:3px;padding:1px 4px;font-weight:700;}
+.tag .tk{color:var(--txt2);}
+
+/* ── Divider ── */
+.divider{border:none;border-top:1px solid var(--border);margin:18px 0;}
+
+/* ── Footer ── */
+#footer{
+  text-align:center;padding:24px 20px;
+  font-size:.74rem;color:var(--txt2);border-top:1px solid var(--border);
+  margin-top:20px;
+}
+
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+</style>
+</head>
+<body>
+
+<!-- ══ HEADER ══ -->
+<div id="hd">
+  <div class="logo">
+    <div class="logo-icon">📖</div>
+    WordLens
+  </div>
+  <div class="badge" id="badge">0 단어</div>
+</div>
+
+<!-- ══ NAV ══ -->
+<div id="nav">
+  <button class="nb on" onclick="goTab('import',this)">📥 단어 가져오기</button>
+  <button class="nb" onclick="goTab('vocab',this)">📚 단어장</button>
+  <button class="nb" onclick="goTab('quiz',this)">🎮 단어시험</button>
+  <button class="nb" onclick="goTab('guide',this)">📋 사용 안내</button>
+</div>
+
+<!-- ══════════════════════════════════
+     IMPORT
+══════════════════════════════════ -->
+<div class="view on" id="view-import">
+
+  <div class="notice">
+    <div class="notice-title">📷 단어책 사진으로 단어 추출하기</div>
+    <div class="step"><div class="snum">1</div><div>단어책 페이지를 촬영하여 Claude 채팅창에 첨부</div></div>
+    <div class="step"><div class="snum">2</div><div>Claude가 자동으로 단어·뜻·발음기호·예문을 JSON으로 변환</div></div>
+    <div class="step"><div class="snum">3</div><div>아래 입력란에 붙여넣고 <strong>가져오기</strong> 버튼 클릭</div></div>
+    <div class="hint-box">💬 채팅창에 사진을 올리고 <strong>"JSON으로 만들어줘"</strong> 라고 하면 됩니다!</div>
+  </div>
+
+  <!-- JSON 붙여넣기 -->
+  <div class="card">
+    <div class="card-title">📋 JSON 붙여넣기로 가져오기</div>
+    <textarea id="jsonInput" placeholder='Claude가 만들어준 JSON을 여기에 붙여넣으세요.
+
+예시:
+[
+  {
+    "word": "accident",
+    "phonetic": "[ǽksidənt]",
+    "pos": "명사",
+    "meaning": "사고, 우연",
+    "example": "There is heavy traffic because of a car accident."
+  }
+]'></textarea>
+    <div id="parseMsg" style="font-size:.74rem;margin-top:6px;min-height:16px;font-weight:600;"></div>
+    <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+      <button class="btn bp" onclick="importJSON()">✅ 가져오기</button>
+      <button class="btn bs" onclick="previewJSON()">👁 미리보기</button>
+      <button class="btn bs" onclick="clearImport()">🗑 지우기</button>
+    </div>
+    <div id="preview" style="margin-top:12px;display:flex;flex-wrap:wrap;gap:6px;"></div>
+  </div>
+
+  <!-- 직접 추가 -->
+  <div class="card">
+    <div class="card-title">✏️ 단어 직접 추가</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+      <div style="flex:1;min-width:110px;"><div class="lbl">영어 단어 *</div><input id="dw" placeholder="apple" onkeydown="if(event.key==='Enter')document.getElementById('dm').focus()"></div>
+      <div style="flex:2;min-width:130px;"><div class="lbl">뜻 (한국어) *</div><input id="dm" placeholder="사과" onkeydown="if(event.key==='Enter')document.getElementById('dp').focus()"></div>
+      <div style="flex:1;min-width:80px;"><div class="lbl">품사</div><input id="dp" placeholder="명사" onkeydown="if(event.key==='Enter')document.getElementById('dph').focus()"></div>
+      <div style="flex:1;min-width:100px;"><div class="lbl">발음기호</div><input id="dph" placeholder="[ǽpəl]" onkeydown="if(event.key==='Enter')addDirect()"></div>
+    </div>
+    <button class="btn bp" onclick="addDirect()">+ 단어장에 추가</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     VOCAB
+══════════════════════════════════ -->
+<div class="view" id="view-vocab">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+    <div style="font-size:1.05rem;font-weight:800;">내 단어장</div>
+    <div style="display:flex;gap:7px;align-items:center;">
+      <span id="vcnt" style="font-size:.74rem;color:var(--txt2);font-weight:600;"></span>
+      <button class="btn br" style="padding:6px 12px;font-size:.74rem;" onclick="clearAll()">전체삭제</button>
+    </div>
+  </div>
+  <div class="search-wrap">
+    <div class="search-icon">🔍</div>
+    <input id="search" placeholder="단어 검색..." oninput="renderVocab()">
+  </div>
+  <div id="vocabList"></div>
+</div>
+
+<!-- ══════════════════════════════════
+     QUIZ
+══════════════════════════════════ -->
+<div class="view" id="view-quiz">
+
+  <!-- setup -->
+  <div id="qSetup" style="max-width:480px;margin:0 auto;">
+    <div style="font-size:1.3rem;font-weight:800;margin-bottom:18px;letter-spacing:-.02em;">단어시험 설정</div>
+    <div class="card">
+      <div class="lbl">문제 유형</div>
+      <div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:6px;" id="tg">
+        <button class="pill on" data-v="both">영어 ↔ 뜻 혼합</button>
+        <button class="pill" data-v="e2k">영어 → 뜻</button>
+        <button class="pill" data-v="k2e">뜻 → 영어</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="lbl">답 입력 방식</div>
+      <div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:6px;" id="ig">
+        <button class="pill on" data-v="kb">⌨️ 키보드</button>
+        <button class="pill" data-v="hw">✍️ 손글씨 (Apple Pencil / S Pen)</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="lbl">문제 수</div>
+      <div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:6px;" id="ng">
+        <button class="pill on" data-v="10">10문제</button>
+        <button class="pill" data-v="20">20문제</button>
+        <button class="pill" data-v="30">30문제</button>
+        <button class="pill" data-v="all">전체</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="lbl">출제 범위</div>
+      <div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:6px;" id="rg">
+        <button class="pill on" data-v="all">전체 단어</button>
+        <button class="pill" data-v="wrong">⚠️ 틀린 단어만</button>
+      </div>
+    </div>
+    <button class="btn bp" style="width:100%;justify-content:center;padding:15px;font-size:.95rem;" onclick="startQuiz()">
+      🎮 시험 시작
+    </button>
+  </div>
+
+  <!-- game -->
+  <div id="qGame" style="display:none;max-width:560px;margin:0 auto;">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
+      <div class="progwrap"><div class="progbar" id="qProg" style="width:0%;"></div></div>
+      <span id="qCtr" style="font-size:.73rem;color:var(--txt2);white-space:nowrap;font-weight:700;"></span>
+      <span id="qSc" style="font-size:.73rem;background:var(--card2);border:1px solid var(--border);padding:3px 10px;border-radius:7px;font-weight:700;font-family:'Courier New',monospace;"></span>
+    </div>
+    <div class="qcard">
+      <div class="qlbl" id="qLbl"></div>
+      <div class="qwd" id="qWd"></div>
+      <div class="qph" id="qPh"></div>
+      <div class="qpron" id="qPron"></div>
+    </div>
+    <div id="qFb" style="display:none;" class="fb"></div>
+    <!-- 키보드 입력 -->
+    <div id="kbArea" style="margin-bottom:14px;">
+      <input id="ans" placeholder="답을 입력하세요..." onkeydown="if(event.key==='Enter')submitQ()" style="font-size:1rem;padding:14px 16px;border-radius:12px;border-width:2px;">
+    </div>
+    <!-- 손글씨 입력 -->
+    <div id="hwArea" style="display:none;margin-bottom:14px;">
+      <div class="cv-toolbar">
+        <button class="btn bs" id="penBtn" onclick="setTool('pen')" style="padding:6px 13px;font-size:.76rem;background:var(--acc);color:#fff;border-color:var(--acc);">✏️ 펜</button>
+        <button class="btn bs" id="erBtn" onclick="setTool('er')" style="padding:6px 13px;font-size:.76rem;">🧹 지우개</button>
+        <button class="btn bs" onclick="clrCv()" style="padding:6px 13px;font-size:.76rem;">전체 지우기</button>
+      </div>
+      <div class="cvwrap"><canvas id="cv" height="190"></canvas></div>
+      <div style="margin-top:10px;">
+        <div class="lbl" style="margin-bottom:5px;">캔버스에 쓴 후 여기에 입력하고 제출하세요</div>
+        <input id="hwAns" placeholder="답 입력..." onkeydown="if(event.key==='Enter')submitQ()" style="font-size:1rem;padding:13px 15px;border-radius:12px;border-width:2px;">
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;">
+      <button class="btn bp" onclick="submitQ()" style="flex:1;justify-content:center;padding:14px;font-size:.92rem;">✅ 제출</button>
+      <button class="btn bs" onclick="skipQ()" style="padding:14px 18px;">건너뛰기</button>
+    </div>
+  </div>
+
+  <!-- result -->
+  <div id="qRes" style="display:none;max-width:460px;margin:0 auto;text-align:center;">
+    <div class="card" style="padding:34px;">
+      <div class="res-grade" id="resGr"></div>
+      <div id="resLb" style="color:var(--txt2);margin-top:6px;font-size:.88rem;font-weight:600;"></div>
+      <div class="res-grid">
+        <div class="res-box"><div class="res-num" id="resOk" style="color:var(--grn);"></div><div style="font-size:.71rem;color:var(--txt2);margin-top:3px;font-weight:600;">정답</div></div>
+        <div class="res-box"><div class="res-num" id="resBad" style="color:var(--red);"></div><div style="font-size:.71rem;color:var(--txt2);margin-top:3px;font-weight:600;">오답</div></div>
+      </div>
+    </div>
+    <div id="wrongList" style="text-align:left;margin-bottom:18px;"></div>
+    <div style="display:flex;gap:10px;justify-content:center;">
+      <button class="btn bp" onclick="startQuiz()">🔄 다시 시험</button>
+      <button class="btn bs" onclick="showSetup()">⚙️ 설정 변경</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     GUIDE
+══════════════════════════════════ -->
+<div class="view" id="view-guide">
+  <div style="font-size:1.05rem;font-weight:800;margin-bottom:16px;">📋 WordLens 사용 안내</div>
+
+  <div class="card">
+    <div class="card-title">📷 단어 추출 방법 (무료)</div>
+    <div style="font-size:.83rem;color:var(--txt2);line-height:1.9;">
+      <p>이 앱은 <strong style="color:var(--txt);">Claude AI 채팅</strong>과 함께 사용합니다.</p>
+      <hr class="divider">
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div style="display:flex;gap:10px;align-items:flex-start;">
+          <span style="font-size:1.2rem;">1️⃣</span>
+          <div><strong style="color:var(--txt);">단어책 사진 촬영</strong><br>여러 장을 한 번에 채팅창에 첨부하세요</div>
+        </div>
+        <div style="display:flex;gap:10px;align-items:flex-start;">
+          <span style="font-size:1.2rem;">2️⃣</span>
+          <div><strong style="color:var(--txt);">"JSON으로 만들어줘" 입력</strong><br>Claude가 단어·뜻·발음기호·예문을 자동 추출합니다</div>
+        </div>
+        <div style="display:flex;gap:10px;align-items:flex-start;">
+          <span style="font-size:1.2rem;">3️⃣</span>
+          <div><strong style="color:var(--txt);">단어 가져오기 탭에 붙여넣기</strong><br>가져오기 버튼을 누르면 단어장에 자동 저장됩니다</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">📚 단어장 기능</div>
+    <div style="font-size:.83rem;color:var(--txt2);line-height:2;">
+      🔍 <strong style="color:var(--txt);">검색</strong> — 영어 단어 또는 한국어 뜻으로 검색<br>
+      🔊 <strong style="color:var(--txt);">발음</strong> — 🇺🇸 미국 · 🇬🇧 영국 · 🇦🇺 호주 · 🇮🇳 인도 발음<br>
+      ⚠️ <strong style="color:var(--txt);">틀린 단어 표시</strong> — 시험에서 틀린 단어는 붉은 테두리로 표시<br>
+      🗑️ <strong style="color:var(--txt);">개별/전체 삭제</strong> — 필요 없는 단어 삭제 가능
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">🎮 단어시험 기능</div>
+    <div style="font-size:.83rem;color:var(--txt2);line-height:2;">
+      📝 <strong style="color:var(--txt);">3가지 유형</strong> — 영어→뜻 / 뜻→영어 / 혼합<br>
+      ✍️ <strong style="color:var(--txt);">손글씨 모드</strong> — Apple Pencil · Samsung S Pen 지원<br>
+      ⚠️ <strong style="color:var(--txt);">틀린 단어만 재시험</strong> — 취약한 단어 집중 학습<br>
+      📊 <strong style="color:var(--txt);">성적 확인</strong> — 정답률과 오답 목록 제공
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">💾 데이터 저장</div>
+    <div style="font-size:.83rem;color:var(--txt2);line-height:1.9;">
+      모든 단어는 <strong style="color:var(--txt);">기기 로컬 저장소</strong>에 저장됩니다.<br>
+      앱을 닫아도 단어가 유지됩니다.<br>
+      브라우저 데이터를 지우면 단어장도 초기화됩니다.
+    </div>
+  </div>
+
+  <div id="footer">
+    WordLens v1.0 &nbsp;·&nbsp; Powered by Claude AI &nbsp;·&nbsp; 가족과 함께 영어 공부 🎉
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ════════════════════════════════════
+// STATE
+// ════════════════════════════════════
+var vocab = [];
+var wrongIds = [];
+var qQs=[], qCur=0, qSc=0, qWrongs=[];
+var cvs, ctx, cvDraw=false, cvLast=[0,0], cvTool='pen';
+
+try { vocab = JSON.parse(localStorage.getItem('wl5') || '[]'); } catch(e) {}
+try { wrongIds = JSON.parse(localStorage.getItem('wl5w') || '[]'); } catch(e) {}
+
+// ════════════════════════════════════
+// BOOT — pill events + initial render
+// ════════════════════════════════════
+['tg','ig','ng','rg'].forEach(function(id) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  el.addEventListener('click', function(e) {
+    var p = e.target.closest('.pill');
+    if (!p) return;
+    el.querySelectorAll('.pill').forEach(function(x){x.classList.remove('on');});
+    p.classList.add('on');
+  });
+});
+upd();
+renderVocab();
+
+// ════════════════════════════════════
+// TAB
+// ════════════════════════════════════
+function goTab(name, el) {
+  document.querySelectorAll('.view').forEach(function(v){v.classList.remove('on');});
+  document.querySelectorAll('.nb').forEach(function(b){b.classList.remove('on');});
+  document.getElementById('view-'+name).classList.add('on');
+  el.classList.add('on');
+  if (name==='vocab') renderVocab();
+  if (name==='quiz') showSetup();
+}
+
+// ════════════════════════════════════
+// PERSIST
+// ════════════════════════════════════
+function save() {
+  localStorage.setItem('wl5', JSON.stringify(vocab));
+  localStorage.setItem('wl5w', JSON.stringify(wrongIds));
+  upd();
+}
+function upd() {
+  document.getElementById('badge').textContent = vocab.length + ' 단어';
+  var el = document.getElementById('vcnt');
+  if (el) el.textContent = vocab.length + '개';
+}
+
+// ════════════════════════════════════
+// JSON IMPORT
+// ════════════════════════════════════
+function parseInput() {
+  var raw = document.getElementById('jsonInput').value.trim();
+  if (!raw) { setMsg('입력이 비어있습니다', false); return null; }
+  var clean = raw.replace(/```json/g,'').replace(/```/g,'').trim();
+  var m = clean.match(/\[[\s\S]*\]/);
+  if (m) clean = m[0];
+  try {
+    var arr = JSON.parse(clean);
+    if (!Array.isArray(arr)) { setMsg('배열 형식이 아닙니다', false); return null; }
+    return arr;
+  } catch(e) { setMsg('JSON 오류: ' + e.message, false); return null; }
+}
+function setMsg(msg, ok) {
+  var el = document.getElementById('parseMsg');
+  el.textContent = msg;
+  el.style.color = ok ? 'var(--grn)' : 'var(--red)';
+}
+function previewJSON() {
+  var arr = parseInput(); if (!arr) return;
+  document.getElementById('preview').innerHTML = arr.slice(0,30).map(function(w) {
+    return '<div class="tag"><span class="tw">'+esc(w.word||'')+'</span>'
+      +(w.pos?'<span class="tp">'+esc(w.pos)+'</span>':'')
+      +'<span class="tk">'+esc(w.meaning||'')+'</span></div>';
+  }).join('');
+  setMsg('✅ ' + arr.length + '개 단어 미리보기 — 이상 없으면 가져오기를 누르세요', true);
+}
+function importJSON() {
+  var arr = parseInput(); if (!arr||!arr.length) return;
+  var added = 0;
+  arr.forEach(function(w) {
+    if (!w.word||!w.meaning) return;
+    var wt = String(w.word).trim(), mt = String(w.meaning).trim();
+    if (!wt||!mt) return;
+    if (vocab.find(function(v){return v.word.toLowerCase()===wt.toLowerCase();})) return;
+    vocab.push({
+      id: Date.now()+Math.random(),
+      word: wt, meaning: mt,
+      phonetic: String(w.phonetic||''),
+      pos: String(w.pos||''),
+      example: String(w.example||'')
+    });
+    added++;
+  });
+  save();
+  setMsg('✅ ' + added + '개 저장 완료! (중복 ' + (arr.length-added) + '개 제외)', true);
+  document.getElementById('preview').innerHTML = '';
+  document.getElementById('jsonInput').value = '';
+  toast(added + '개 단어가 단어장에 추가됐습니다! 📚', 'ok');
+}
+function clearImport() {
+  document.getElementById('jsonInput').value = '';
+  document.getElementById('parseMsg').textContent = '';
+  document.getElementById('preview').innerHTML = '';
+}
+function addDirect() {
+  var w = document.getElementById('dw').value.trim();
+  var m = document.getElementById('dm').value.trim();
+  var p = document.getElementById('dp').value.trim();
+  var ph = document.getElementById('dph').value.trim();
+  if (!w||!m) { toast('영어 단어와 뜻을 입력해주세요', 'err'); return; }
+  if (vocab.find(function(v){return v.word.toLowerCase()===w.toLowerCase();})) {
+    toast('이미 단어장에 있는 단어입니다', 'err'); return;
+  }
+  vocab.push({id:Date.now()+Math.random(), word:w, meaning:m, pos:p, phonetic:ph, example:''});
+  save(); renderVocab();
+  ['dw','dm','dp','dph'].forEach(function(id){document.getElementById(id).value='';});
+  document.getElementById('dw').focus();
+  toast('"' + w + '" 단어 추가됨! ✅', 'ok');
+}
+
+// ════════════════════════════════════
+// VOCAB RENDER
+// ════════════════════════════════════
+function clearAll() {
+  if (!vocab.length) return;
+  if (!confirm('단어장의 모든 단어를 삭제할까요?\n이 작업은 되돌릴 수 없습니다.')) return;
+  vocab = []; wrongIds = []; save(); renderVocab();
+  toast('단어장이 초기화됐습니다', 'ok');
+}
+function delWord(id) {
+  vocab = vocab.filter(function(v){return v.id!==id;});
+  wrongIds = wrongIds.filter(function(x){return x!==id;});
+  save(); renderVocab();
+}
+function renderVocab() {
+  upd();
+  var q = (document.getElementById('search')||{}).value||'';
+  var list = vocab.filter(function(w) {
+    if (!q) return true;
+    return w.word.toLowerCase().includes(q.toLowerCase()) ||
+           w.meaning.includes(q) ||
+           (w.phonetic && w.phonetic.includes(q));
+  });
+  var el = document.getElementById('vocabList');
+  if (!el) return;
+  if (!list.length) {
+    el.innerHTML = '<div class="empty"><div class="empty-icon">'+(vocab.length?'🔍':'📭')+'</div>'
+      +'<div class="empty-title">'+(vocab.length?'검색 결과가 없어요':'단어장이 비어있어요')+'</div>'
+      +'<div class="empty-sub">'+(vocab.length?'다른 검색어를 시도해보세요':'단어 가져오기 탭에서 단어를 추가해보세요')+'</div></div>';
+    return;
+  }
+  el.innerHTML = list.map(function(w) {
+    var iw = wrongIds.indexOf(w.id) >= 0;
+    return '<div class="wc slide-up'+(iw?' wrong':'')+'"><div class="wm">'
+      +'<div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap;">'
+      +'<span class="we">'+esc(w.word)+'</span>'
+      +(w.pos?'<span class="wpos">'+esc(w.pos)+'</span>':'')
+      +(iw?'<span class="wwrong-tag">⚠️ 틀림</span>':'')
+      +'</div>'
+      +(w.phonetic?'<div class="wph">'+esc(w.phonetic)+'</div>':'')
+      +'<div class="wk">'+esc(w.meaning)+'</div>'
+      +(w.example?'<div class="wex">"'+esc(w.example)+'"</div>':'')
+      +'</div>'
+      +'<div class="wa"><div class="pr">'
+      +'<button class="pb" onclick="sp(\''+esc(w.word)+'\',\'en-US\')">🇺🇸</button>'
+      +'<button class="pb" onclick="sp(\''+esc(w.word)+'\',\'en-GB\')">🇬🇧</button>'
+      +'<button class="pb" onclick="sp(\''+esc(w.word)+'\',\'en-AU\')">🇦🇺</button>'
+      +'<button class="pb" onclick="sp(\''+esc(w.word)+'\',\'en-IN\')">🇮🇳</button>'
+      +'</div>'
+      +'<button class="del-btn" onclick="delWord('+w.id+')">🗑️</button>'
+      +'</div></div>';
+  }).join('');
+}
+
+// ════════════════════════════════════
+// SPEECH
+// ════════════════════════════════════
+function sp(word, lang) {
+  if (!window.speechSynthesis) { toast('이 브라우저는 발음 기능을 지원하지 않습니다', 'err'); return; }
+  window.speechSynthesis.cancel();
+  var u = new SpeechSynthesisUtterance(word);
+  u.lang = lang; u.rate = 0.85;
+  var vs = window.speechSynthesis.getVoices();
+  for (var i=0;i<vs.length;i++) { if(vs[i].lang===lang){u.voice=vs[i];break;} }
+  window.speechSynthesis.speak(u);
+}
+
+// ════════════════════════════════════
+// QUIZ
+// ════════════════════════════════════
+function gPV(id) { return document.querySelector('#'+id+' .pill.on').dataset.v; }
+function showSetup() {
+  document.getElementById('qSetup').style.display = 'block';
+  document.getElementById('qGame').style.display = 'none';
+  document.getElementById('qRes').style.display = 'none';
+}
+function startQuiz() {
+  if (!vocab.length) { toast('단어장에 단어를 먼저 추가해주세요!', 'err'); return; }
+  var type=gPV('tg'), inp=gPV('ig'), cnt=gPV('ng'), range=gPV('rg');
+  var pool;
+  if (range === 'wrong') {
+    pool = vocab.filter(function(w){return wrongIds.indexOf(w.id)>=0;});
+    if (!pool.length) { toast('틀린 단어가 없습니다. 전체 단어로 시험합니다', 'ok'); pool = vocab.slice(); }
+  } else { pool = vocab.slice(); }
+  pool = shuf(pool);
+  var n = cnt==='all' ? pool.length : Math.min(parseInt(cnt), pool.length);
+  pool = pool.slice(0, n);
+  qQs = pool.map(function(w) {
+    var d = type==='both' ? (Math.random()>.5?'e2k':'k2e') : type;
+    return {word:w, dir:d};
+  });
+  qCur=0; qSc=0; qWrongs=[];
+  document.getElementById('qSetup').style.display = 'none';
+  document.getElementById('qGame').style.display = 'block';
+  document.getElementById('qRes').style.display = 'none';
+  var hw = inp==='hw';
+  document.getElementById('kbArea').style.display = hw?'none':'block';
+  document.getElementById('hwArea').style.display = hw?'block':'none';
+  if (hw) setTimeout(initCv, 50);
+  renderQ();
+}
+function renderQ() {
+  var q=qQs[qCur], tot=qQs.length;
+  document.getElementById('qProg').style.width = (qCur/tot*100) + '%';
+  document.getElementById('qCtr').textContent = (qCur+1) + ' / ' + tot;
+  document.getElementById('qSc').textContent = qSc + '점';
+  document.getElementById('qFb').style.display = 'none';
+  document.getElementById('ans').value = '';
+  document.getElementById('hwAns').value = '';
+  clrCv();
+  if (q.dir==='e2k') {
+    document.getElementById('qLbl').textContent = '다음 단어의 뜻은?';
+    document.getElementById('qWd').textContent = q.word.word;
+    document.getElementById('qPh').textContent = q.word.phonetic || '';
+    document.getElementById('qPron').innerHTML = [['🇺🇸','en-US'],['🇬🇧','en-GB'],['🇦🇺','en-AU']].map(function(pb){
+      return '<button class="pb" onclick="sp(\''+esc(q.word.word)+'\',\''+pb[1]+'\')">'+pb[0]+'</button>';
+    }).join('');
+  } else {
+    document.getElementById('qLbl').textContent = '다음 뜻의 영어 단어는?';
+    document.getElementById('qWd').textContent = q.word.meaning;
+    document.getElementById('qPh').textContent = '';
+    document.getElementById('qPron').innerHTML = '';
+  }
+  setTimeout(function() {
+    var inp = document.getElementById('hwArea').style.display==='none'
+      ? document.getElementById('ans') : document.getElementById('hwAns');
+    if (inp) inp.focus();
+  }, 80);
+}
+function submitQ() {
+  var q = qQs[qCur];
+  var hw = document.getElementById('hwArea').style.display !== 'none';
+  var a = (hw ? document.getElementById('hwAns').value : document.getElementById('ans').value).trim();
+  if (!a) { toast('답을 입력해주세요', 'err'); return; }
+  var al = a.toLowerCase(), ok;
+  if (q.dir==='e2k') {
+    var ml = q.word.meaning.toLowerCase();
+    ok = ml.includes(al) || al.includes(ml) || lev(al,ml) <= 2;
+  } else {
+    var wl = q.word.word.toLowerCase();
+    ok = al===wl || lev(al,wl) <= 1;
+  }
+  // 틀린 단어 기록
+  if (!ok && wrongIds.indexOf(q.word.id)<0) wrongIds.push(q.word.id);
+  if (ok) { var wi=wrongIds.indexOf(q.word.id); if(wi>=0) wrongIds.splice(wi,1); }
+  save();
+  var fb = document.getElementById('qFb');
+  fb.className = 'fb ' + (ok?'ok':'no');
+  fb.innerHTML = '<div class="fb-icon">'+(ok?'🎉':'😅')+'</div>'
+    +'<div class="fb-title">'+(ok?'정답!':'오답!')+'</div>'
+    +(!ok?'<div class="fb-answer">정답: <strong>'+esc(q.dir==='e2k'?q.word.meaning:q.word.word)+'</strong></div>':'');
+  fb.style.display = 'block';
+  if (ok) qSc+=10; else qWrongs.push(q.word);
+  qCur++;
+  setTimeout(function(){
+    if (qCur>=qQs.length) showResult(); else renderQ();
+  }, 1600);
+}
+function skipQ() {
+  if (wrongIds.indexOf(qQs[qCur].word.id)<0) wrongIds.push(qQs[qCur].word.id);
+  qWrongs.push(qQs[qCur].word); qCur++; save();
+  if (qCur>=qQs.length) showResult(); else renderQ();
+}
+function showResult() {
+  document.getElementById('qGame').style.display = 'none';
+  document.getElementById('qRes').style.display = 'block';
+  var tot=qQs.length, ok=qSc/10, pct=Math.round(ok/tot*100);
+  document.getElementById('resGr').textContent = pct + '%';
+  document.getElementById('resLb').textContent = ok + '/' + tot + ' 정답';
+  document.getElementById('resOk').textContent = ok;
+  document.getElementById('resBad').textContent = tot-ok;
+  var wl = document.getElementById('wrongList');
+  if (qWrongs.length) {
+    wl.innerHTML = '<div style="font-size:.88rem;color:var(--red);margin-bottom:10px;font-weight:700;">⚠️ 다시 외울 단어 ('+qWrongs.length+'개)</div>'
+      + qWrongs.map(function(w){
+        return '<div class="wc wrong" style="margin-bottom:8px;padding:11px 14px;">'
+          +'<div class="wm"><span class="we">'+esc(w.word)+'</span>'
+          +'<div class="wk">'+esc(w.meaning)+'</div></div>'
+          +'<div class="wa"><div class="pr">'
+          +'<button class="pb" onclick="sp(\''+esc(w.word)+'\',\'en-US\')">🇺🇸</button>'
+          +'<button class="pb" onclick="sp(\''+esc(w.word)+'\',\'en-GB\')">🇬🇧</button>'
+          +'</div></div></div>';
+      }).join('');
+  } else {
+    wl.innerHTML = '<div style="text-align:center;padding:16px;color:var(--grn);font-size:.95rem;font-weight:700;">🎊 완벽합니다! 모든 단어를 맞췄어요!</div>';
+  }
+}
+
+// ════════════════════════════════════
+// CANVAS (손글씨)
+// ════════════════════════════════════
+function initCv() {
+  cvs = document.getElementById('cv');
+  if (!cvs) return;
+  ctx = cvs.getContext('2d');
+  cvs.width = cvs.offsetWidth; cvs.height = 190;
+  ctx.fillStyle = '#141420'; ctx.fillRect(0,0,cvs.width,cvs.height);
+  cvs.onpointerdown = function(e){ cvDraw=true; cvLast=xyOf(e); e.preventDefault(); };
+  cvs.onpointermove = function(e){ if(!cvDraw)return; doStroke(xyOf(e)); e.preventDefault(); };
+  cvs.onpointerup = cvs.onpointerleave = function(){ cvDraw=false; };
+}
+function xyOf(e) {
+  var r = cvs.getBoundingClientRect();
+  return [(e.clientX-r.left)*cvs.width/r.width, (e.clientY-r.top)*cvs.height/r.height];
+}
+function doStroke(p) {
+  ctx.globalCompositeOperation = cvTool==='er' ? 'destination-out' : 'source-over';
+  ctx.strokeStyle = '#eeeef5'; ctx.lineWidth = cvTool==='er' ? 24 : 5;
+  ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  ctx.beginPath(); ctx.moveTo(cvLast[0],cvLast[1]); ctx.lineTo(p[0],p[1]); ctx.stroke();
+  cvLast = p;
+}
+function setTool(t) {
+  cvTool = t;
+  var pen=document.getElementById('penBtn'), er=document.getElementById('erBtn');
+  if (pen) {
+    pen.style.background = t==='pen'?'var(--acc)':'var(--card2)';
+    pen.style.color = t==='pen'?'#fff':'var(--txt2)';
+    pen.style.borderColor = t==='pen'?'var(--acc)':'var(--border)';
+  }
+  if (er) {
+    er.style.background = t==='er'?'var(--acc)':'var(--card2)';
+    er.style.color = t==='er'?'#fff':'var(--txt2)';
+    er.style.borderColor = t==='er'?'var(--acc)':'var(--border)';
+  }
+}
+function clrCv() {
+  if (!ctx) return;
+  ctx.fillStyle = '#141420'; ctx.fillRect(0,0,cvs?cvs.width:300,cvs?cvs.height:190);
+}
+
+// ════════════════════════════════════
+// UTILS
+// ════════════════════════════════════
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function shuf(a) {
+  for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}
+  return a;
+}
+function lev(a,b){
+  var m=a.length,n=b.length,dp=[],i,j;
+  for(i=0;i<=m;i++){dp[i]=[];for(j=0;j<=n;j++)dp[i][j]=i?j?0:i:j;}
+  for(i=1;i<=m;i++)for(j=1;j<=n;j++)
+    dp[i][j]=a[i-1]===b[j-1]?dp[i-1][j-1]:1+Math.min(dp[i-1][j],dp[i][j-1],dp[i-1][j-1]);
+  return dp[m][n];
+}
+var _tt;
+function toast(msg, type) {
+  var el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'show ' + (type||'ok');
+  clearTimeout(_tt);
+  _tt = setTimeout(function(){ el.classList.remove('show'); }, 3200);
+}
+</script>
+</body>
+</html>
